@@ -1,4 +1,4 @@
-## StyleGAN2-ADA &mdash; Official PyTorch implementation
+## StyleGAN2-ADA (pytorch base) &mdash; ฉบับภาษาไทย
 
 ![Teaser image](./docs/stylegan2-ada-teaser-1024x252.png)
 
@@ -8,33 +8,7 @@ https://arxiv.org/abs/2006.06676<br>
 
 Abstract: *Training generative adversarial networks (GAN) using too little data typically leads to discriminator overfitting, causing training to diverge. We propose an adaptive discriminator augmentation mechanism that significantly stabilizes training in limited data regimes. The approach does not require changes to loss functions or network architectures, and is applicable both when training from scratch and when fine-tuning an existing GAN on another dataset. We demonstrate, on several datasets, that good results are now possible using only a few thousand training images, often matching StyleGAN2 results with an order of magnitude fewer images. We expect this to open up new application domains for GANs. We also find that the widely used CIFAR-10 is, in fact, a limited data benchmark, and improve the record FID from 5.59 to 2.42.*
 
-For business inquiries, please visit our website and submit the form: [NVIDIA Research Licensing](https://www.nvidia.com/en-us/research/inquiries/)
-
-## Release notes
-
-This repository is a faithful reimplementation of [StyleGAN2-ADA](https://github.com/NVlabs/stylegan2-ada/) in PyTorch, focusing on correctness, performance, and compatibility.
-
-**Correctness**
-* Full support for all primary training configurations.
-* Extensive verification of image quality, training curves, and quality metrics against the TensorFlow version.
-* Results are expected to match in all cases, excluding the effects of pseudo-random numbers and floating-point arithmetic.
-
-**Performance**
-* Training is typically 5%&ndash;30% faster compared to the TensorFlow version on NVIDIA Tesla V100 GPUs.
-* Inference is up to 35% faster in high resolutions, but it may be slightly slower in low resolutions.
-* GPU memory usage is comparable to the TensorFlow version.
-* Faster startup time when training new networks (<50s), and also when using pre-trained networks (<4s).
-* New command line options for tweaking the training performance.
-
-**Compatibility**
-* Compatible with old network pickles created using the TensorFlow version.
-* New ZIP/PNG based dataset format for maximal interoperability with existing 3rd party tools.
-* TFRecords datasets are no longer supported &mdash; they need to be converted to the new format.
-* New JSON-based format for logs, metrics, and training curves.
-* Training curves are also exported in the old TFEvents format if TensorBoard is installed.
-* Command line syntax is mostly unchanged, with a few exceptions (e.g., `dataset_tool.py`).
-* Comparison methods are not supported (`--cmethod`, `--dcap`, `--cfg=cifarbaseline`, `--aug=adarv`)
-* **Truncation is now disabled by default.**
+เชิงธุรกิจ โปรดเข้าเว็บไซต์นี้: [NVIDIA Research Licensing](https://www.nvidia.com/en-us/research/inquiries/)
 
 ## Data repository
 
@@ -58,6 +32,13 @@ This repository is a faithful reimplementation of [StyleGAN2-ADA](https://github
 | &ensp;&ensp;&ensp;&ensp;&boxvr;&nbsp; [transfer-learning-source-nets](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/transfer-learning-source-nets/) | Models used as starting point for transfer learning
 | &ensp;&ensp;&ensp;&ensp;&boxur;&nbsp; [metrics](https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/) | Feature detectors used by the quality metrics
 
+## ประเภท stylegan
+
+* [stylegan2 (tensorflow base)](https://github.com/NVlabs/stylegan2)
+* [stylegan2-ada (tensorflow base)](https://github.com/NVlabs/stylegan2-ada)
+* [stylegan2-ada (pytorch base)](https://github.com/NVlabs/stylegan2-ada-pytorch)
+* [stylegan3 (pytorch base)](https://github.com/NVlabs/stylegan3)
+
 ## Requirements
 
 * Linux and Windows are supported, but we recommend Linux for performance and compatibility reasons.
@@ -69,29 +50,54 @@ This repository is a faithful reimplementation of [StyleGAN2-ADA](https://github
 
 The code relies heavily on custom PyTorch extensions that are compiled on the fly using NVCC. On Windows, the compilation requires Microsoft Visual Studio. We recommend installing [Visual Studio Community Edition](https://visualstudio.microsoft.com/vs/) and adding it into `PATH` using `"C:\Program Files (x86)\Microsoft Visual Studio\<VERSION>\Community\VC\Auxiliary\Build\vcvars64.bat"`.
 
-## Getting started
+## การใช้งานผ่าน script file
 
-Pre-trained networks are stored as `*.pkl` files that can be referenced using local filenames or URLs:
+### การ generate รูปจากโมเดล pre-trained
+
+โมเดลที่เคยเทรน (official from NVDIA)
+
+* [FFHQ dataset](https://github.com/NVlabs/ffhq-dataset)
+* [MetFaces dataset](https://github.com/NVlabs/metfaces-dataset)
+* [AFHQ dataset](https://paperswithcode.com/dataset/afhq)
+* [CIFAR-10 dataset](https://www.cs.toronto.edu/~kriz/cifar.html)
+* BreCaHAD dataset
 
 ```.bash
-# Generate curated MetFaces images without truncation (Fig.10 left)
-python generate.py --outdir=out --trunc=1 --seeds=85,265,297,849 \
-    --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
-
-# Generate uncurated MetFaces images with truncation (Fig.12 upper left)
-python generate.py --outdir=out --trunc=0.7 --seeds=600-605 \
-    --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
-
-# Generate class conditional CIFAR-10 images (Fig.17 left, Car)
-python generate.py --outdir=out --seeds=0-35 --class=1 \
-    --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/cifar10.pkl
-
-# Style mixing example
-python style_mixing.py --outdir=out --rows=85,100,75,458,1500 --cols=55,821,1789,293 \
-    --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
+ffhq_model = 'pretrained/ffhq.pkl'
+metfaces_model = 'pretrained/metfaces.pkl'
+afhqcat_model = 'pretrained/afhqcat.pkl'
+afhqdog_model = 'pretrained/afhqdog.pkl'
+afhqwild_model = 'pretrained/afhqwild.pkl'
+cifar10_model = 'pretrained/cifar10.pkl'
+brecahad_model = 'pretrained/brecahad.pkl'
 ```
 
-Outputs from the above commands are placed under `out/*.png`, controlled by `--outdir`. Downloaded network pickles are cached under `$HOME/.cache/dnnlib`, which can be overridden by setting the `DNNLIB_CACHE_DIR` environment variable. The default PyTorch extension build directory is `$HOME/.cache/torch_extensions`, which can be overridden by setting `TORCH_EXTENSIONS_DIR`.
+สร้างรูปใบหน้าตาม dataset
+
+```.bash
+# directory สำหรับเก็บรูปที่ถูกสร้าง (สกุล *.png)
+out_path = ''
+
+# เบื้องต้น
+python generate.py --outdir={out_path} --network={ffhq_model}
+
+# ปรับ truncation
+python generate.py --outdir=out --trunc=0.7 \
+    --network={ffhq_model}
+
+# มีเงื่อนไข
+python generate.py --outdir={out_path} --seeds=0-35 --class=1 \
+    --network={cifar10_model}
+
+# Style mixing example
+python style_mixing.py --outdir={out_path} --rows=85,100,75,458,1500 --cols=55,821,1789,293 \
+    --network={ffhq_model}
+```
+
+hyperparameter
+
+
+### การใช้งานผ่าน Docker
 
 **Docker**: You can run the above curated image example using Docker as follows:
 
@@ -103,7 +109,11 @@ docker build --tag sg2ada:latest .
 
 Note: The Docker image requires NVIDIA driver release `r455.23` or later.
 
-**Legacy networks**: The above commands can load most of the network pickles created using the previous TensorFlow versions of StyleGAN2 and StyleGAN2-ADA. However, for future compatibility, we recommend converting such legacy pickles into the new format used by the PyTorch version:
+### Legacy network
+
+สำหรับโมเดลที่เคยเทรนผ่าน tensorflow และต้องการใช้งานผ่าน pytorch 
+
+** ทาง official แนะนำให้เปลี่ยนเป็น pytorch base สำหรับการนำไปใช้งานในอนาคต
 
 ```.bash
 python legacy.py \
@@ -111,13 +121,13 @@ python legacy.py \
     --dest=stylegan2-cat-config-f.pkl
 ```
 
-## Projecting images to latent space
+### Projecting images to latent space
 
 To find the matching latent vector for a given image file, run:
 
 ```.bash
-python projector.py --outdir=out --target=~/mytargetimg.png \
-    --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/ffhq.pkl
+python projector.py --outdir={out_path} --target=~/mytargetimg.png \
+    --network={ffhq_model}
 ```
 
 For optimal results, the target image should be cropped and aligned similar to the [FFHQ dataset](https://github.com/NVlabs/ffhq-dataset). The above command saves the projection target `out/target.png`, result `out/proj.png`, latent vector `out/projected_w.npz`, and progression video `out/proj.mp4`. You can render the resulting latent vector by specifying `--projected_w` for `generate.py`:
@@ -127,7 +137,7 @@ python generate.py --outdir=out --projected_w=out/projected_w.npz \
     --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/ffhq.pkl
 ```
 
-## Using networks from Python
+## การใช้งานใน python
 
 You can use pre-trained networks in your own Python code as follows:
 
@@ -152,7 +162,9 @@ img = G.synthesis(w, noise_mode='const', force_fp32=True)
 
 Please refer to [`generate.py`](./generate.py), [`style_mixing.py`](./style_mixing.py), and [`projector.py`](./projector.py) for further examples.
 
-## Preparing datasets
+## การเทรนโมเดลด้วย dataset ของเราเตรียม
+
+### Preparing datasets
 
 Datasets are stored as uncompressed ZIP archives containing uncompressed PNG files and a metadata file `dataset.json` for labels.
 
@@ -184,56 +196,7 @@ python dataset_tool.py --source=/tmp/ffhq-unpacked --dest=~/datasets/ffhq256x256
     --width=256 --height=256
 ```
 
-**MetFaces**: Download the [MetFaces dataset](https://github.com/NVlabs/metfaces-dataset) and create ZIP archive:
-
-```.bash
-python dataset_tool.py --source=~/downloads/metfaces/images --dest=~/datasets/metfaces.zip
-```
-
-**AFHQ**: Download the [AFHQ dataset](https://github.com/clovaai/stargan-v2/blob/master/README.md#animal-faces-hq-dataset-afhq) and create ZIP archive:
-
-```.bash
-python dataset_tool.py --source=~/downloads/afhq/train/cat --dest=~/datasets/afhqcat.zip
-python dataset_tool.py --source=~/downloads/afhq/train/dog --dest=~/datasets/afhqdog.zip
-python dataset_tool.py --source=~/downloads/afhq/train/wild --dest=~/datasets/afhqwild.zip
-```
-
-**CIFAR-10**: Download the [CIFAR-10 python version](https://www.cs.toronto.edu/~kriz/cifar.html) and convert to ZIP archive:
-
-```.bash
-python dataset_tool.py --source=~/downloads/cifar-10-python.tar.gz --dest=~/datasets/cifar10.zip
-```
-
-**LSUN**: Download the desired categories from the [LSUN project page](https://www.yf.io/p/lsun/) and convert to ZIP archive:
-
-```.bash
-python dataset_tool.py --source=~/downloads/lsun/raw/cat_lmdb --dest=~/datasets/lsuncat200k.zip \
-    --transform=center-crop --width=256 --height=256 --max_images=200000
-
-python dataset_tool.py --source=~/downloads/lsun/raw/car_lmdb --dest=~/datasets/lsuncar200k.zip \
-    --transform=center-crop-wide --width=512 --height=384 --max_images=200000
-```
-
-**BreCaHAD**:
-
-Step 1: Download the [BreCaHAD dataset](https://figshare.com/articles/BreCaHAD_A_Dataset_for_Breast_Cancer_Histopathological_Annotation_and_Diagnosis/7379186).
-
-Step 2: Extract 512x512 resolution crops using `dataset_tool.py` from the [TensorFlow version of StyleGAN2-ADA](https://github.com/NVlabs/stylegan2-ada/):
-
-```.bash
-# Using dataset_tool.py from TensorFlow version at
-# https://github.com/NVlabs/stylegan2-ada/
-python dataset_tool.py extract_brecahad_crops --cropsize=512 \
-    --output_dir=/tmp/brecahad-crops --brecahad_dir=~/downloads/brecahad/images
-```
-
-Step 3: Create ZIP archive using `dataset_tool.py` from this repository:
-
-```.bash
-python dataset_tool.py --source=/tmp/brecahad-crops --dest=~/datasets/brecahad.zip
-```
-
-## Training new networks
+### Training new networks
 
 In its most basic form, training new networks boils down to:
 
@@ -302,7 +265,7 @@ In typical cases, 25000 kimg or more is needed to reach convergence, but the res
 
 Note: `--cfg=auto` serves as a reasonable first guess for the hyperparameters but it does not necessarily lead to optimal results for a given dataset. For example, `--cfg=stylegan2` yields considerably better FID  for FFHQ-140k at 1024x1024 than illustrated above. We recommend trying out at least a few different values of `--gamma` for each new dataset.
 
-## Quality metrics
+### Quality metrics
 
 By default, `train.py` automatically computes FID for each network pickle exported during training. We recommend inspecting `metric-fid50k_full.jsonl` (or TensorBoard) at regular intervals to monitor the training progress. When desired, the automatic computation can be disabled with `--metrics=none` to speed up the training slightly (3%&ndash;9%).
 
