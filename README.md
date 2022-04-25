@@ -41,14 +41,52 @@ Abstract: *Training generative adversarial networks (GAN) using too little data 
 
 ## Requirements
 
-* Linux and Windows are supported, but we recommend Linux for performance and compatibility reasons.
-* 1&ndash;8 high-end NVIDIA GPUs with at least 12 GB of memory. We have done all testing and development using NVIDIA DGX-1 with 8 Tesla V100 GPUs.
+### Requirement for usage
+
 * 64-bit Python 3.7 and PyTorch 1.7.1. See [https://pytorch.org/](https://pytorch.org/) for PyTorch install instructions.
 * CUDA toolkit 11.0 or later.  Use at least version 11.1 if running on RTX 3090.  (Why is a separate CUDA toolkit installation required?  See comments in [#2](https://github.com/NVlabs/stylegan2-ada-pytorch/issues/2#issuecomment-779457121).)
-* Python libraries: `pip install click requests tqdm pyspng ninja imageio-ffmpeg==0.4.3`.  We use the Anaconda3 2020.11 distribution which installs most of these by default.
+* Python libraries: `pip install click requests tqdm pyspng ninja imageio-ffmpeg==0.4.3`.  
+* We use the Anaconda3 2020.11 distribution which installs most of these by default.
 * Docker users: use the [provided Dockerfile](./Dockerfile) to build an image with the required library dependencies.
+* The code relies heavily on custom PyTorch extensions that are compiled on the fly using NVCC. On Windows, the compilation requires Microsoft Visual Studio. We recommend installing [Visual Studio Community Edition](https://visualstudio.microsoft.com/vs/) and adding it into `PATH` using `"C:\Program Files (x86)\Microsoft Visual Studio\<VERSION>\Community\VC\Auxiliary\Build\vcvars64.bat"`.
 
-The code relies heavily on custom PyTorch extensions that are compiled on the fly using NVCC. On Windows, the compilation requires Microsoft Visual Studio. We recommend installing [Visual Studio Community Edition](https://visualstudio.microsoft.com/vs/) and adding it into `PATH` using `"C:\Program Files (x86)\Microsoft Visual Studio\<VERSION>\Community\VC\Auxiliary\Build\vcvars64.bat"`.
+### Requirement for training model
+
+* Linux and Windows are supported, but we recommend Linux for performance and compatibility reasons.
+* 1&ndash;8 high-end NVIDIA GPUs with at least 12 GB of memory. We have done all testing and development using NVIDIA DGX-1 with 8 Tesla V100 GPUs.
+
+## Set up
+
+### Colab
+Clone the repo
+```.bash
+!git clone https://github.com/NEWKNP/thai-stylegan2-ada-pytorch
+```
+
+drive to directory
+```.bash
+%cd thai-stylegan2-ada-pytorch
+```
+
+Install necessary library
+```.bash
+!pip install click requests tqdm opensimplex pyspng ninja imageio-ffmpeg==0.4.3
+```
+
+### Local with Docker
+Clone the repo
+```.bash
+!git clone https://github.com/NEWKNP/thai-stylegan2-ada-pytorch
+```
+
+drive to directory
+```.bash
+%cd thai-stylegan2-ada-pytorch
+```
+build docker
+```.bash
+docker build --tag sg2ada:latest .
+```
 
 ## การใช้งานผ่าน script file
 
@@ -63,13 +101,14 @@ The code relies heavily on custom PyTorch extensions that are compiled on the fl
 * BreCaHAD dataset
 
 ```.bash
-ffhq_model = 'pretrained/ffhq.pkl'
-metfaces_model = 'pretrained/metfaces.pkl'
-afhqcat_model = 'pretrained/afhqcat.pkl'
-afhqdog_model = 'pretrained/afhqdog.pkl'
-afhqwild_model = 'pretrained/afhqwild.pkl'
-cifar10_model = 'pretrained/cifar10.pkl'
-brecahad_model = 'pretrained/brecahad.pkl'
+pretrained_model = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained'
+ffhq_model = pretrained_model+'/ffhq.pkl'
+metfaces_model = pretrained_model+'/metfaces.pkl'
+afhqcat_model = pretrained_model+'/afhqcat.pkl'
+afhqdog_model = pretrained_model+'/afhqdog.pkl'
+afhqwild_model = pretrained_model+'/afhqwild.pkl'
+cifar10_model = pretrained_model+'/cifar10.pkl'
+brecahad_model = pretrained_model+'/brecahad.pkl'
 ```
 
 สร้างรูปใบหน้าตาม dataset
@@ -79,7 +118,7 @@ brecahad_model = 'pretrained/brecahad.pkl'
 out_path = ''
 
 # เบื้องต้น
-python generate.py --outdir={out_path} --network={ffhq_model}
+python generate.py --outdir={out_path} --seeds=85,265,297,849 --network={ffhq_model}
 
 # ปรับ truncation
 python generate.py --outdir=out --trunc=0.7 \
@@ -94,17 +133,21 @@ python style_mixing.py --outdir={out_path} --rows=85,100,75,458,1500 --cols=55,8
     --network={ffhq_model}
 ```
 
-hyperparameter
-
+parameters  
+--network : 'Network pickle filename'  
+--seeds: 'List of random seeds'  
+--trunc: 'Truncation psi'  
+--class: 'Class label (unconditional if not specified)'  
+--noise-mode: 'Noise mode' option=['const', 'random', 'none']  
+--projected-w': 'Projection result file'  
+--outdir: 'Where to save the output images'  
 
 ### การใช้งานผ่าน Docker
 
 **Docker**: You can run the above curated image example using Docker as follows:
 
 ```.bash
-docker build --tag sg2ada:latest .
-./docker_run.sh python3 generate.py --outdir=out --trunc=1 --seeds=85,265,297,849 \
-    --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
+./docker_run.sh python3 generate.py --outdir={out_path} --seeds=85,265,297,849 --network={ffhq_model}
 ```
 
 Note: The Docker image requires NVIDIA driver release `r455.23` or later.
@@ -123,89 +166,114 @@ python legacy.py \
 
 ### Projecting images to latent space
 
-To find the matching latent vector for a given image file, run:
+การปรับรูปจริงให้เข้ากับ model โดยจะคืนค่า latent vector สำหรับปรับสไตล์ในรูป
 
 ```.bash
 python projector.py --outdir={out_path} --target=~/mytargetimg.png \
     --network={ffhq_model}
 ```
 
-For optimal results, the target image should be cropped and aligned similar to the [FFHQ dataset](https://github.com/NVlabs/ffhq-dataset). The above command saves the projection target `out/target.png`, result `out/proj.png`, latent vector `out/projected_w.npz`, and progression video `out/proj.mp4`. You can render the resulting latent vector by specifying `--projected_w` for `generate.py`:
-
-```.bash
-python generate.py --outdir=out --projected_w=out/projected_w.npz \
-    --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/ffhq.pkl
-```
+รูปที่ใช้ ควรมีการ preprocessing (crop and align) ตาม [FFHQ dataset](https://github.com/NVlabs/ffhq-dataset) โดย command ข้างต้นจะบันทึกรูปจริง รูปที่ถูก project รวมถึง video กระบวนการ projection จากรูปจริง สู่รูปที่เข้ากับโมเดล 
 
 ## การใช้งานใน python
-
-You can use pre-trained networks in your own Python code as follows:
-
+import library:
 ```.python
-with open('ffhq.pkl', 'rb') as f:
-    G = pickle.load(f)['G_ema'].cuda()  # torch.nn.Module
-z = torch.randn([1, G.z_dim]).cuda()    # latent codes
-c = None                                # class labels (not used in this example)
-img = G(z, c)                           # NCHW, float32, dynamic range [-1, +1]
+import math
+import pickle
+import torch
+from tqdm import tqdm
+from PIL import Image, ImageDraw
+```
+import our library:
+```.python
+import dnnlib
+import legacy
+```
+load model:
+```.python
+def loadGenerator(network_pkl, seed=303):
+  ''' Load trained model (file.pkl)'''
+  torch.manual_seed(seed)
+  print('Loading networks from "%s"...' % network_pkl)
+  device = torch.device('cuda') # device = torch.device('cpu')
+  # Load networks.
+  with dnnlib.util.open_url(network_pkl) as fp:
+      G = legacy.load_network_pkl(fp)['G_ema'].requires_grad_(False).to(device) # type: ignore
+  return G
+
+G_model = loadGenerator(ffhq_model)                                   # load generator model
+```
+generate data:
+```.python
+def generateFromW(W, G, noise_mode='random'):
+  ''' Generate image from numpy array (file.npz) '''
+  device = torch.device('cuda') # device = torch.device('cpu')
+  if type(W) != torch.Tensor:
+    W = torch.from_numpy(W).to(device)
+  if W.dim() != 3:
+    W = W.unsqueeze(0)
+  img = G.synthesis(W, noise_mode=noise_mode)
+  img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+  img = Image.fromarray(img[0].cpu().numpy(), 'RGB')
+  return img.resize((256,256))
+
+z = torch.randn([1, G_model.z_dim]).cuda()                            # example latent codes
+w = G_model.mapping(z, None, truncation_psi=0.5, truncation_cutoff=8) # mapping latent
+img = generateFromW(w, G_model)                                       # generate an image
 ```
 
-The above code requires `torch_utils` and `dnnlib` to be accessible via `PYTHONPATH`. It does not need source code for the networks themselves &mdash; their class definitions are loaded from the pickle via `torch_utils.persistence`.
+สามารถดูตัวอย่างเพิ่มเติมได้ใน [`generate.py`](./generate.py), [`style_mixing.py`](./style_mixing.py), and [`projector.py`](./projector.py).
 
-The pickle contains three networks. `'G'` and `'D'` are instantaneous snapshots taken during training, and `'G_ema'` represents a moving average of the generator weights over several training steps. The networks are regular instances of `torch.nn.Module`, with all of their parameters and buffers placed on the CPU at import and gradient computation disabled by default.
-
-The generator consists of two submodules, `G.mapping` and `G.synthesis`, that can be executed separately. They also support various additional options:
-
-```.python
-w = G.mapping(z, c, truncation_psi=0.5, truncation_cutoff=8)
-img = G.synthesis(w, noise_mode='const', force_fp32=True)
-```
-
-Please refer to [`generate.py`](./generate.py), [`style_mixing.py`](./style_mixing.py), and [`projector.py`](./projector.py) for further examples.
-
-## การเทรนโมเดลด้วย dataset ของเราเตรียม
+## การเทรนโมเดลด้วย dataset ที่เราเตรียม
 
 ### Preparing datasets
 
-Datasets are stored as uncompressed ZIP archives containing uncompressed PNG files and a metadata file `dataset.json` for labels.
-
-Custom datasets can be created from a folder containing images; see [`python dataset_tool.py --help`](./docs/dataset-tool-help.txt) for more information. Alternatively, the folder can also be used directly as a dataset, without running it through `dataset_tool.py` first, but doing so may lead to suboptimal performance.
-
-Legacy TFRecords datasets are not supported &mdash; see below for instructions on how to convert them.
-
-**FFHQ**:
-
-Step 1: Download the [Flickr-Faces-HQ dataset](https://github.com/NVlabs/ffhq-dataset) as TFRecords.
-
-Step 2: Extract images from TFRecords using `dataset_tool.py` from the [TensorFlow version of StyleGAN2-ADA](https://github.com/NVlabs/stylegan2-ada/):
-
-```.bash
-# Using dataset_tool.py from TensorFlow version at
-# https://github.com/NVlabs/stylegan2-ada/
-python ../stylegan2-ada/dataset_tool.py unpack \
-    --tfrecord_dir=~/ffhq-dataset/tfrecords/ffhq --output_dir=/tmp/ffhq-unpacked
-```
-
-Step 3: Create ZIP archive using `dataset_tool.py` from this repository:
+Input: folder/zip file ที่มีรูปขนาด 1024x1024 สกุลไฟล์ png  
 
 ```.bash
 # Original 1024x1024 resolution.
-python dataset_tool.py --source=/tmp/ffhq-unpacked --dest=~/datasets/ffhq.zip
+python dataset_tool.py --source=/your_data --dest=~/datasets/ffhq.zip
 
 # Scaled down 256x256 resolution.
-python dataset_tool.py --source=/tmp/ffhq-unpacked --dest=~/datasets/ffhq256x256.zip \
+python dataset_tool.py --source=/your_data --dest=~/datasets/ffhq256x256.zip \
     --width=256 --height=256
 ```
 
+parameters  
+--source : 'Directory or archive name for input dataset'  
+    --source path/                      Recursively load all images from path/  
+    --source dataset.zip                Recursively load all images from dataset.zip  
+--dest: 'Output directory or archive name for output dataset'  
+    --dest /path/to/dir                 Save output files under /path/to/dir  
+    --dest /path/to/dataset.zip         Save output files into /path/to/dataset.zip  
+--max-images: 'Output only up to `max-images` images'  
+--resize-filter: 'Filter to use when resizing images for output resolution'  option:['box', 'lanczos']  
+--transform: 'Input crop/resize mode' option=['center-crop', 'center-crop-wide']  
+--width': 'Output width'  
+--height: 'Output height' 
+
+Class labels are stored in a file called 'dataset.json' that is stored at the dataset root folder.  
+This file has the following structure:
+    \b
+    {
+        "labels": [
+            ["00000/img00000000.png",6],
+            ["00000/img00000001.png",9],
+            ... repeated for every image in the datase
+            ["00049/img00049999.png",1]
+        ]
+    }
+If the 'dataset.json' file cannot be found, the dataset is interpreted as not containing class labels.
+
 ### Training new networks
-
-In its most basic form, training new networks boils down to:
-
+รันเพื่อเช็ค execution ว่า paramesters ที่ใส่เข้าไป มีปัญหากลางทางไหม? ก่อนรันจริง
 ```.bash
 python train.py --outdir=~/training-runs --data=~/mydataset.zip --gpus=1 --dry-run
+```
+รันจริง
+```.bash
 python train.py --outdir=~/training-runs --data=~/mydataset.zip --gpus=1
 ```
-
-The first command is optional; it validates the arguments, prints out the training configuration, and exits. The second command kicks off the actual training.
 
 In this example, the results are saved to a newly created directory `~/training-runs/<ID>-mydataset-auto1`, controlled by `--outdir`. The training exports network pickles (`network-snapshot-<INT>.pkl`) and example images (`fakes<INT>.png`) at regular intervals (controlled by `--snap`). For each pickle, it also evaluates FID (controlled by `--metrics`) and logs the resulting scores in `metric-fid50k_full.jsonl` (as well as TFEvents if TensorBoard is installed).
 
@@ -338,3 +406,9 @@ This is a research reference implementation and is treated as a one-time code dr
 ## Acknowledgements
 
 We thank David Luebke for helpful comments; Tero Kuosmanen and Sabu Nadarajan for their support with compute infrastructure; and Edgar Sch&ouml;nfeld for guidance on setting up unconditional BigGAN.
+
+## จุดประสงค์ของเจ้าของ repo นี้ / my propose
+1. เพื่อให้ผู้ใช้ที่มีข้อจำกัดทางภาษา สามารถใช้งาน stylegan2 ในเบื้องต้นได้
+2. เนื่องจากผู้เขียนมีประสบการณ์การนำ stylegan2-ada ไปประยุกต์ใช้งาน จึงอยากถ่ายทอดประสบการณ์
+3. ต้องการปรับปรุง original repo ให้สามารถใช้งานได้ง่ายยิ่งขึ้น โดยได้ใส่ colab playground ไว้สำหรับใช้งาน แต่สำหรับการเทรนโมเดล อาจต้องสมัคร colab pro+
+4. For English, I wish this repo will contribute in Thai language
