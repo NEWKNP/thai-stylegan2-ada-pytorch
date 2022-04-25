@@ -1,5 +1,8 @@
 ## StyleGAN2-ADA (pytorch base) &mdash; ฉบับภาษาไทย
 
+repo นี้จะรวมถึงแค่การเทรนโมเดลเท่านั้น จะไม่รวมถึงการนำโมเดลไปใช้ หรือการปรับสไตล์ในรูป
+__________________________________________________________________________________
+
 ![Teaser image](./docs/stylegan2-ada-teaser-1024x252.png)
 
 **Training Generative Adversarial Networks with Limited Data**<br>
@@ -76,12 +79,12 @@ Install necessary library
 ### Local with Docker
 Clone the repo
 ```.bash
-!git clone https://github.com/NEWKNP/thai-stylegan2-ada-pytorch
+git clone https://github.com/NEWKNP/thai-stylegan2-ada-pytorch
 ```
 
 drive to directory
 ```.bash
-%cd thai-stylegan2-ada-pytorch
+cd thai-stylegan2-ada-pytorch
 ```
 build docker
 ```.bash
@@ -133,14 +136,14 @@ python style_mixing.py --outdir={out_path} --rows=85,100,75,458,1500 --cols=55,8
     --network={ffhq_model}
 ```
 
-parameters  
---network : 'Network pickle filename'  
---seeds: 'List of random seeds'  
---trunc: 'Truncation psi'  
---class: 'Class label (unconditional if not specified)'  
---noise-mode: 'Noise mode' option=['const', 'random', 'none']  
---projected-w': 'Projection result file'  
---outdir: 'Where to save the output images'  
+parameters   
+* `--network`: 'Network pickle filename'  
+* `--seeds`: 'List of random seeds'  
+* `--trunc`: 'Truncation psi'  
+* `--class`: 'Class label (unconditional if not specified)'  
+* `--noise-mode`: 'Noise mode' option=['const', 'random', 'none']  
+* `--projected-w`: 'Projection result file'  
+* `--outdir`: 'Where to save the output images'  
 
 ### การใช้งานผ่าน Docker
 
@@ -240,21 +243,21 @@ python dataset_tool.py --source=/your_data --dest=~/datasets/ffhq256x256.zip \
 ```
 
 parameters  
---source : 'Directory or archive name for input dataset'  
+* `--source`: 'Directory or archive name for input dataset'  
     --source path/                      Recursively load all images from path/  
     --source dataset.zip                Recursively load all images from dataset.zip  
---dest: 'Output directory or archive name for output dataset'  
+* `--dest`: 'Output directory or archive name for output dataset'  
     --dest /path/to/dir                 Save output files under /path/to/dir  
     --dest /path/to/dataset.zip         Save output files into /path/to/dataset.zip  
---max-images: 'Output only up to `max-images` images'  
---resize-filter: 'Filter to use when resizing images for output resolution'  option:['box', 'lanczos']  
---transform: 'Input crop/resize mode' option=['center-crop', 'center-crop-wide']  
---width': 'Output width'  
---height: 'Output height' 
+* `--max-images`: 'Output only up to `max-images` images'  
+* `--resize-filter`: 'Filter to use when resizing images for output resolution'  option:['box', 'lanczos']  
+* `--transform`: 'Input crop/resize mode' option=['center-crop', 'center-crop-wide']  
+* `--width`: 'Output width'  
+* `--height`: 'Output height' 
 
 Class labels are stored in a file called 'dataset.json' that is stored at the dataset root folder.  
 This file has the following structure:
-    \b
+```
     {
         "labels": [
             ["00000/img00000000.png",6],
@@ -263,6 +266,7 @@ This file has the following structure:
             ["00049/img00049999.png",1]
         ]
     }
+```
 If the 'dataset.json' file cannot be found, the dataset is interpreted as not containing class labels.
 
 ### Training new networks
