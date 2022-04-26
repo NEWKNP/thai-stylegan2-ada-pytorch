@@ -1,18 +1,14 @@
 ## StyleGAN2-ADA (pytorch base) &mdash; ฉบับภาษาไทย
 
-repo นี้จะรวมถึงแค่การเทรนโมเดลเท่านั้น จะไม่รวมถึงการนำโมเดลไปใช้ หรือการปรับสไตล์ในรูป
+repo นี้จะรวมถึงแค่การเทรนโมเดลเท่านั้น จะไม่รวมถึงการนำโมเดลไปใช้ หรือการปรับสไตล์ในรูป  
+colab playground: [Link](https://github.com/NEWKNP/thai-stylegan2-ada-pytorch/blob/master/stylegan2_ada_pytorch_playground.ipynb)  
+original paper:  
+**Training Generative Adversarial Networks with Limited Data**  
+Tero Karras, Miika Aittala, Janne Hellsten, Samuli Laine, Jaakko Lehtinen, Timo Aila  
+https://arxiv.org/abs/2006.06676
+
+เชิงธุรกิจ โปรดเข้าเว็บไซต์นี้: [NVIDIA Research Licensing](https://www.nvidia.com/en-us/research/inquiries/)  
 __________________________________________________________________________________
-
-![Teaser image](./docs/stylegan2-ada-teaser-1024x252.png)
-
-**Training Generative Adversarial Networks with Limited Data**<br>
-Tero Karras, Miika Aittala, Janne Hellsten, Samuli Laine, Jaakko Lehtinen, Timo Aila<br>
-https://arxiv.org/abs/2006.06676<br>
-
-Abstract: *Training generative adversarial networks (GAN) using too little data typically leads to discriminator overfitting, causing training to diverge. We propose an adaptive discriminator augmentation mechanism that significantly stabilizes training in limited data regimes. The approach does not require changes to loss functions or network architectures, and is applicable both when training from scratch and when fine-tuning an existing GAN on another dataset. We demonstrate, on several datasets, that good results are now possible using only a few thousand training images, often matching StyleGAN2 results with an order of magnitude fewer images. We expect this to open up new application domains for GANs. We also find that the widely used CIFAR-10 is, in fact, a limited data benchmark, and improve the record FID from 5.59 to 2.42.*
-
-เชิงธุรกิจ โปรดเข้าเว็บไซต์นี้: [NVIDIA Research Licensing](https://www.nvidia.com/en-us/research/inquiries/)
-
 ## Data repository
 
 | Path | Description
@@ -46,10 +42,10 @@ Abstract: *Training generative adversarial networks (GAN) using too little data 
 
 ### Requirement for usage
 
-* 64-bit Python 3.7 and PyTorch 1.7.1. See [https://pytorch.org/](https://pytorch.org/) for PyTorch install instructions.
-* CUDA toolkit 11.0 or later.  Use at least version 11.1 if running on RTX 3090.  (Why is a separate CUDA toolkit installation required?  See comments in [#2](https://github.com/NVlabs/stylegan2-ada-pytorch/issues/2#issuecomment-779457121).)
+* 64-bit Python 3.7 and PyTorch 1.7.1. (2021) See [https://pytorch.org/](https://pytorch.org/) for PyTorch install instructions.
+* CUDA toolkit 11.0 or later.  Use at least version 11.1 if running on RTX 3090.
 * Python libraries: `pip install click requests tqdm pyspng ninja imageio-ffmpeg==0.4.3`.  
-* We use the Anaconda3 2020.11 distribution which installs most of these by default.
+* Anaconda3 2020.11 distribution which installs most of these by default.
 * Docker users: use the [provided Dockerfile](./Dockerfile) to build an image with the required library dependencies.
 * The code relies heavily on custom PyTorch extensions that are compiled on the fly using NVCC. On Windows, the compilation requires Microsoft Visual Studio. We recommend installing [Visual Studio Community Edition](https://visualstudio.microsoft.com/vs/) and adding it into `PATH` using `"C:\Program Files (x86)\Microsoft Visual Studio\<VERSION>\Community\VC\Auxiliary\Build\vcvars64.bat"`.
 
@@ -235,10 +231,10 @@ Input: folder/zip file ที่มีรูปขนาด 1024x1024 สกุ�
 
 ```.bash
 # Original 1024x1024 resolution.
-python dataset_tool.py --source=/your_data --dest=~/datasets/ffhq.zip
+python dataset_tool.py --source=/your_data_folder --dest=~/datasets/mydataset.zip
 
 # Scaled down 256x256 resolution.
-python dataset_tool.py --source=/your_data --dest=~/datasets/ffhq256x256.zip \
+python dataset_tool.py --source=/your_data_folder --dest=~/datasets/mydataset256x256.zip \
     --width=256 --height=256
 ```
 
@@ -270,7 +266,7 @@ This file has the following structure:
 If the 'dataset.json' file cannot be found, the dataset is interpreted as not containing class labels.
 
 ### Training new networks
-รันเพื่อเช็ค execution ว่า paramesters ที่ใส่เข้าไป มีปัญหากลางทางไหม? ก่อนรันจริง
+รันเพื่อเช็ค execution ว่า paramesters ที่ใส่เข้าไป เพื่อตรวจสอบปัญหาที่อาจเกิด ก่อนเริ่มรันจริง
 ```.bash
 python train.py --outdir=~/training-runs --data=~/mydataset.zip --gpus=1 --dry-run
 ```
@@ -279,9 +275,22 @@ python train.py --outdir=~/training-runs --data=~/mydataset.zip --gpus=1 --dry-r
 python train.py --outdir=~/training-runs --data=~/mydataset.zip --gpus=1
 ```
 
-In this example, the results are saved to a newly created directory `~/training-runs/<ID>-mydataset-auto1`, controlled by `--outdir`. The training exports network pickles (`network-snapshot-<INT>.pkl`) and example images (`fakes<INT>.png`) at regular intervals (controlled by `--snap`). For each pickle, it also evaluates FID (controlled by `--metrics`) and logs the resulting scores in `metric-fid50k_full.jsonl` (as well as TFEvents if TensorBoard is installed).
+โดยผลลัพท์จากการเทรนทั้งหมดจะถูกรวมอยู่ใน folder `~/training-runs/<ID>-mydataset-auto1` ซึ่งสอดคล้องกับ `--outdir` ที่เราตั้ง  
+ผลลัพท์ประกอบไปด้วย  
+1. model  
+โดยโมเดลจะถูกบันทึกทุกๆ `--snap` และเก็บไว้ในรูป pickle file  
+ชื่อไฟล์: `network-snapshot-<INT>.pkl`  
+ข้อดีของการบันทึกโมเดล เมื่อการเทรนถูกระงับกลางทาง สามารถเทรนต่อได้โดยการหยิบโมเดลที่ถูกบันทึกล่าสุด  
+นอกจากนี้ยังเทียบ fake image แต่ละ snap ได้ เพื่อเลือกโมเดลที่ดีที่สุด  
+ส่วนข้อเสียคือ พื้นที่ในการเก็บโมเดลก็จะโตตาม ดังนั้นควรกำหนดค่า `--snap` ให้เหมาะสม  
+2. fake image  
+โดยรูปที่ถูกสร้าง จะถูกบันทึกทุกๆ `--snap` เช่นเดียวกับโมเดล  
+ชื่อไฟล์: `fakes<INT>.png`  
+3. log  
+จะเก็บค่า loss ผลการเทรนต่างๆตาม FID score หรือ ตัววัดผลอื่นๆ (controlled by `--metrics`)  
+ชื่อไฟล์: `metric-fid50k_full.jsonl`  
 
-The name of the output directory reflects the training configuration. For example, `00000-mydataset-auto1` indicates that the *base configuration* was `auto1`, meaning that the hyperparameters were selected automatically for training on one GPU. The base configuration is controlled by `--cfg`:
+`auto1` จากชื่อ folder จะบ่งบอกถึงการ auto hyperparameters ในการเทรนบน gpu 1 เครื่อง ซึ่งตัวแปร set up ได้ตาม `--cfg` ข้างล่าง:
 
 | Base config           | Description
 | :-------------------- | :----------
@@ -295,18 +304,19 @@ The name of the output directory reflects the training configuration. For exampl
 The training configuration can be further customized with additional command line options:
 
 * `--aug=noaug` disables ADA.
-* `--cond=1` enables class-conditional training (requires a dataset with labels).
+* `--cond=1` สำหรับโมเดลที่ต้องการ label see conditional GAN.
 * `--mirror=1` amplifies the dataset with x-flips. Often beneficial, even with ADA.
-* `--resume=ffhq1024 --snap=10` performs transfer learning from FFHQ trained at 1024x1024.
-* `--resume=~/training-runs/<NAME>/network-snapshot-<INT>.pkl` resumes a previous training run.
+* `--resume=ffhq1024` หยิบโมเดลจาก pretrain มาเทรน เช่น ffhq at 1024x1024.
+* `--resume=~/training-runs/<NAME>/network-snapshot-<INT>.pkl` หยิบโมเดลที่เทรนล่าสุดมาเทรนต่อ.
+* `--snap=10` บันทึกโมเดลทุกๆ 10 epochs
 * `--gamma=10` overrides R1 gamma. We recommend trying a couple of different values for each new dataset.
 * `--aug=ada --target=0.7` adjusts ADA target value (default: 0.6).
 * `--augpipe=blit` enables pixel blitting but disables all other augmentations.
 * `--augpipe=bgcfnc` enables all available augmentations (blit, geom, color, filter, noise, cutout).
 
-Please refer to [`python train.py --help`](./docs/train-help.txt) for the full list.
+ดูเพิ่มเติมได้ใน [`python train.py --help`](./docs/train-help.txt)
 
-## Expected training time
+## Expected training time (For Thai translated coming soon...)
 
 The total training time depends heavily on resolution, number of GPUs, dataset, desired quality, and hyperparameters. The following table lists expected wallclock times to reach different points in the training, measured in thousands of real images shown to the discriminator ("kimg"):
 
@@ -416,3 +426,4 @@ We thank David Luebke for helpful comments; Tero Kuosmanen and Sabu Nadarajan fo
 2. เนื่องจากผู้เขียนมีประสบการณ์การนำ stylegan2-ada ไปประยุกต์ใช้งาน จึงอยากถ่ายทอดประสบการณ์
 3. ต้องการปรับปรุง original repo ให้สามารถใช้งานได้ง่ายยิ่งขึ้น โดยได้ใส่ colab playground ไว้สำหรับใช้งาน แต่สำหรับการเทรนโมเดล อาจต้องสมัคร colab pro+
 4. For English, I wish this repo will contribute in Thai language
+ 
